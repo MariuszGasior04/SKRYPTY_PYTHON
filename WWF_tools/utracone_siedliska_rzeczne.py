@@ -8,7 +8,8 @@ def calcSlope(lineLayer):
     :return:
     '''
     i=0
-    with arcpy.da.UpdateCursor(lineLayer, ['SPADEK', 'Shape_Length', 'SHAPE@']) as update:
+    with arcpy.da.UpdateCursor(lineLayer, ['SPADEK', 'Shape_Length', 'SHAPE@', 'Wkp']) as update:
+    # with arcpy.da.UpdateCursor(lineLayer, ['SPADEK', 'Shape_Length', 'SHAPE@','Wkp','ROZNICA_WYS']) as update:
         for row in update:
             if row[0] is None:
                 i+=1
@@ -19,10 +20,13 @@ def calcSlope(lineLayer):
                 y2 = lineGeom[0][-1].X
                 x2 = lineGeom[0][-1].Y
                 z2 = getElevation.getPointElevation(x2, y2)
+                gLength = math.sqrt(math.pow((x2 - x1), 2) + math.pow((y2 - y1), 2))
                 try:
                     dh = z2 - z1
-                    row[0] = round(dh*100/row[1], 2)
-                    print("{} - Spadek {}% pomiedzy {} i {}".format(i, row[0], z2, z1))
+                    row[0] = round(dh*1000/row[1], 2)
+                    row[3] = row[1]/gLength
+                    # row[4] = dh
+                    print("{} - Spadek {} promili pomiedzy {} i {}".format(i, row[0], z2, z1))
                     update.updateRow(row)
                 except TypeError:
                     continue
@@ -160,5 +164,11 @@ def readRiverReservoir(riverSections, reservoirs):
 if __name__ == '__main__':
     inWarstwaRzek = r'E:\Waloryzajca_rzek_WWF\ROBOCZY_LIPIEC_SIERPIEN_2023\01_06_Pilotazowa_ocena_utraty_siedliska_rzecznego\Ocena_ciaglosci_BOBR.gdb\odcinki_rzek_05_2023_SORT'
     inWarstwaZbiornikow = r'E:\Waloryzajca_rzek_WWF\ROBOCZY_LIPIEC_SIERPIEN_2023\01_06_Pilotazowa_ocena_utraty_siedliska_rzecznego\Ocena_ciaglosci_BOBR.gdb\zbiorniki_sztuczne_MPHP_2017'
-    # calcSlope(inWarstwaRzek)
-    readRiverReservoir(inWarstwaRzek, readReservoir(inWarstwaZbiornikow))
+
+    odc_rzek = r'E:\Waloryzajca_rzek_WWF\ROBOCZY_LUTY_2024\Zad4\Baza_bufory_odcinki.gdb\odcinki_rzek_2024'
+    calcSlope(odc_rzek)
+
+    # readRiverReservoir(inWarstwaRzek, readReservoir(inWarstwaZbiornikow))
+
+# (math.sqrt(!Shape_Length!*!Shape_Length! + !ROZNICA_WYS!*!ROZNICA_WYS!)*0.55/!LICZBA_WIERZCH!)-(!ROZNICA_WYS!*1000*0.141/math.sqrt(!Shape_Length!*!Shape_Length! + !ROZNICA_WYS!*!ROZNICA_WYS!))
+# ((math.sqrt(!Shape_Length!*!Shape_Length! + !ROZNICA_WYS!*!ROZNICA_WYS!)/!LICZBA_WIERZCH!)*((!SZER_ODC!*!SZER_ODC!)-0.012+(!SZER_ODC!*1.1565)+1.4803)/!SZER_ODC!)-(!ROZNICA_WYS!*1000*0.141/(math.sqrt(!Shape_Length!*!Shape_Length! + !ROZNICA_WYS!*!ROZNICA_WYS!)))
