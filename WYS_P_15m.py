@@ -6,7 +6,7 @@ import arcpy
 arcpy.env.overwriteOutput = True
 
 arcpy.env.workspace = ws =\
-    ur'D:\FolderRoboczy\budowle_pietrzace\bud_p_marian2.gdb'
+    r'D:\FolderRoboczy\budowle_pietrzace\bud_p_marian2.gdb'
 
 budowle = 'ddp2'
 pkt_prof = 'Odcinki_rzek_budowli_all_pkt_sort'
@@ -42,7 +42,7 @@ with arcpy.da.UpdateCursor(budowle,
     for row in cur:
         if row[1] == 1:
             row[2] = findPP(str(row[0]), pkt_dict)
-        print row[0], row[2]
+        print(row[0], row[2])
         cur.updateRow(row)
 
 del cur

@@ -8,7 +8,7 @@ def simplifyRiverGeom(riverGeom, riverIDField, riverWidthField, outputRiverGeome
     arcpy.AddMessage('INFO. Upraszczanie geometrii warstwy liniowej {} w oparciu o iloczyn atrybutu {} i współczynnika {}.'.format(riverGeom, riverWidthField, rFactor))
     riverWidths = []
     # tworzymy listę szerokości koryta
-    arcpy.AddMessage('INFO. Grupowanie rzek według szerokości koryta.')
+    arcpy.AddMessage('INFO. Grupowanie rzek według {}.'.format(riverWidthField))
     with arcpy.da.SearchCursor(riverGeom, [riverIDField, riverWidthField]) as search:
         for row in search:
             if row[1] is not None:
@@ -16,7 +16,7 @@ def simplifyRiverGeom(riverGeom, riverIDField, riverWidthField, outputRiverGeome
 
     widths = set(riverWidths)
 
-    arcpy.AddMessage('INFO. Selekcja odcinków z przypisaną szerokością koryta.')
+    arcpy.AddMessage('INFO. Selekcja odcinków z przypisaną {}.'.format(riverWidthField))
     # tworzymy tymczasową warstwę z której będziemy wyjmować odcinki o tej samej szerokosci koryta
     river_temp1 = "in_memory/river_temp1"
     wc1 = riverWidthField + " IS NOT NULL"
@@ -27,7 +27,7 @@ def simplifyRiverGeom(riverGeom, riverIDField, riverWidthField, outputRiverGeome
 
     # upraszczamy geometrie odcinków o tej samej szerokości koryta, zapisujemy je do warstw tymczasowych
     inputs_temp = [river_temp2]
-    arcpy.AddMessage('INFO. Upraszczanie geometrii odcinków rzek.')
+    arcpy.AddMessage('INFO. Upraszczanie geometrii odcinków.')
 
     for width in widths:
         wc3 = riverWidthField + " = " + str(width)
@@ -50,11 +50,11 @@ def simplifyRiverGeom(riverGeom, riverIDField, riverWidthField, outputRiverGeome
     arcpy.JoinField_management(outputRiverGeometry, riverIDField, temp_table, riverIDField, 'COUNT_'+riverIDField)
 
 if __name__ == '__main__':
-    inRiver = 'E:\Waloryzajca_rzek_WWF\ROBOCZY_MARZEC_2024\Zad_1\SimplifyRiverGeometry.gdb\odcinki_rzek_Odra_Notec_2024'
-    riverIDField = 'NKO_RZEKI'
-    riverBedWidthField = 'SZER_ODC'
-    simplifiedRiver = 'E:\Waloryzajca_rzek_WWF\ROBOCZY_MARZEC_2024\Zad_1\SimplifyRiverGeometry.gdb\odcinki_rzek_Odra_Notec_2024_SimpGeom_'
+    inRiver = 'E:\Waloryzajca_rzek_WWF\ROBOCZY_MAJ_2024\Zad3_Weryfikacja_odcinkow_rzeczywistych\Baza_bufory_odcinki.gdb\odcinki_rzek_2024'
+    riverIDField = 'ID'
+    riverBedWidthField = 'SZER_ODC_2'
+    simplifiedRiver = 'E:\Waloryzajca_rzek_WWF\ROBOCZY_MAJ_2024\Zad3_Weryfikacja_odcinkow_rzeczywistych\Baza_bufory_odcinki.gdb\odcinki_rzek_2024_SZER_'
 
-    simplifyRiverGeom(inRiver, riverIDField, riverBedWidthField, simplifiedRiver+'01',0.1)
-    simplifyRiverGeom(inRiver, riverIDField, riverBedWidthField, simplifiedRiver+'07',0.7)
-    # simplifyRiverGeom(inRiver, riverIDField, riverBedWidthField, simplifiedRiver+'2',2.0)
+    # simplifyRiverGeom(inRiver, riverIDField, riverBedWidthField, simplifiedRiver + '03', 0.3)
+    # simplifyRiverGeom(inRiver, riverIDField, riverBedWidthField, simplifiedRiver + '04', 0.4)
+    simplifyRiverGeom(inRiver, riverIDField, riverBedWidthField, simplifiedRiver + '05', 0.5)

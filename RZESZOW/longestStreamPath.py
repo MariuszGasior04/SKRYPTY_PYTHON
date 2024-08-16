@@ -12,7 +12,6 @@ def shp2longestPathNetwork(shpFile):
 
     return longestPathNetwork
 
-
 def longestPaths2Shp(shpFile, catchmentField, outWorkspace, outLongestStream):
     '''Funkcja zapisująca najdłuższe scieżki spływu danej sieci rzecznej do nowej warstwy liniowej z atrybutem ID zlewni'''
 

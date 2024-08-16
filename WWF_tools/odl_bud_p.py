@@ -17,38 +17,47 @@ def odc_filter(rec_dict, km_start, km_end):
     filtered_dict = dict(filter(lambda item: item[1][2] < km_end and item[1][2] > km_start, rec_dict.items()))
     return filtered_dict
 
+def sort_lists_in_dict(dict):
+    for key in dict:
+        dict[key].sort(key=lambda x: x[1])  # Sortuj po drugim elemencie
+    return dict
+
+def find_idx_by_id(dict, szukane_id):
+    for key in dict:
+        for indeks, (id, _) in enumerate(dict[key]):
+            if id == szukane_id:
+                return indeks
+    return None
+
 def calc_dist(workspace, bud):
     arcpy.env.workspace = workspace
 
     pkt_dict = {}
-    with arcpy.da.SearchCursor(bud, ['ID_HYD_R_1', 'KM_RZEKI', 'ODL_KOL_BUD']) as search:
+    with arcpy.da.SearchCursor(bud, ['ID_HYD_R_1', 'KM_RZEKI', 'ODL_KOL_BUD', 'ID_NEW']) as search:
         for row in search:
 
-            if pkt_dict.has_key(str(row[0])):
-                pkt_dict[str(row[0])].append(row[1])
+            if row[0] in pkt_dict:
+                pkt_dict[str(row[0])].append((row[3], row[1]))
             else:
-                pkt_dict[str(row[0])] = [row[1]]
+                pkt_dict[str(row[0])] = [(row[3], row[1])]
 
+    sort_lists_in_dict(pkt_dict)
     del search
 
     print("Utworzono słownik")
-    # print(pkt_dict)
+    # print(pkt_dict['254'])
     id_hyd_r = ''
     i=1
-    with arcpy.da.UpdateCursor(bud, ['ID_HYD_R_1', 'KM_RZEKI', 'ODL_KOL_BUD', 'UWAGA_ODL']) as cur:
+    with arcpy.da.UpdateCursor(bud, ['ID_HYD_R_1', 'KM_RZEKI', 'ODL_KOL_BUD', 'UWAGA_ODL','ID_NEW','ODL_DO_ZRD']) as cur:
         for row in cur:
-            if id_hyd_r != row[0]:
-                i=1
-                id_hyd_r = row[0]
-                if row[2] is None:
-                    # print(pkt_dict[row[0]], i)
-                    row[2] = pkt_dict[row[0]][i]-row[1]
-                    i += 1
-            else:
-                if row[2] is None:
-                    row[2] = pkt_dict[row[0]][i]-row[1]
-                    i += 1
-            cur.updateRow(row)
+            if row[2] is None:
+                id = find_idx_by_id(pkt_dict, row[4])
+                try:
+                    row[2] = pkt_dict[row[0]][id+1][1] - row[1]
+                except IndexError:
+                    row[3] = 'Ostatnia budowla na cieku.Odleglość do źródła.'
+                    row[2] = row[5]
+                cur.updateRow(row)
     del cur
     return
 
@@ -76,7 +85,7 @@ def calc_river_length_above(workspace, bud, river_o):
                         if id_zlew[-1] == '0':
                             id_zlew = id_zlew[:-1]
                         else:
-                            id_zlew = id_zlew[:-1] + str(long(id_zlew[-1]) - 1)
+                            id_zlew = id_zlew[:-1] + str(int(id_zlew[-1]) - 1)
                             where_clause = 'ID_HYD_10' + ' LIKE ' + "'" + id_zlew + "%'"
                             arcpy.SelectLayerByAttribute_management(river_o_layer, "ADD_TO_SELECTION", where_clause)
                     except:
@@ -122,12 +131,12 @@ def calc_river_length_above2(workspace, bud, rec_tab):
             if row[3] is None:
                 i += 1
                 r = km_filter(id_hyd_filter(rec_dict, row[2]), row[5])
-
+                rc = r.copy()
                 a = len(r)
                 b = a - 1
                 while a > b:
                     b = len(r)
-                    for key in r.keys():
+                    for key in rc:
                         r.update(id_hyd_filter(rec_dict, key))
                     a = len(r)
 
@@ -164,12 +173,12 @@ def calc_unobstacled_river_length_above(workspace, bud, rec_tab):
             if row[3] is None:
                 i += 1
                 r = odc_filter(id_hyd_filter(rec_dict, row[2]), row[5], row[5]+row[4])
-
+                rc = r.copy()
                 a = len(r)
                 b = a - 1
                 while a > b:
                     b = len(r)
-                    for value in r.values():
+                    for value in rc.values():
                         if len(id_hyd_filter(rec_dict, value[1])) > 0 and value[3] is not None:
                             r.update(odc_filter(id_hyd_filter(rec_dict, value[1]), 0, value[3]))
                         elif len(id_hyd_filter(rec_dict, value[1])) > 0 and value[3] is None:
@@ -196,10 +205,11 @@ def calc_unobstacled_river_length_above(workspace, bud, rec_tab):
 if __name__ == '__main__':
     # workspace = 'E:\Waloryzajca_rzek_WWF\PPH2\ew\PPH2_10_12_22.gdb'
     # budowle = 'bud_p_id_odc'
-    # tabela_recypientow = 'rzeki_r_PKT_UJSCIOWE_Locate'
-    workspace = 'E:\Waloryzajca_rzek_WWF\ROBOCZY_CZERWIEC_2023\Robo.gdb'
-    budowle = 'bud_p_z_przepustami_Sort'
     tabela_recypientow = 'rzeki_r_PKT_UJSCIOWE_Locate'
+    workspace = 'D:\ZLECENIA_2023\ROBOCZY_CZERWIEC_2023\Ocena_ciaglosci_BOBR.gdb'
+    budowle = 'Obiekty_hydro_calosc'
+    # calc_dist(workspace,budowle)
+    # tabela_recypientow = 'rzeki_r_PKT_UJSCIOWE_Locate'
     calc_unobstacled_river_length_above(workspace, budowle, tabela_recypientow)
     # calc_river_length_above2(workspace, budowle, tabela_recypientow)
     # calc_dist(workspace, budowle)

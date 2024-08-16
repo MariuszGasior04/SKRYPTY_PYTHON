@@ -48,5 +48,5 @@ def clearDTMdubles(featureDataset):
 
     return
 if __name__ == "__main__":
-    layer = r'P:\02_Pracownicy\Mariusz\Przeglad_2023\01_Opracowanie wstepne\Analiza skorowidzy NMT\Skorowidze.gdb\skorowidz_NMT_data_xy2000_filtr'
+    layer = r'C:\robo\Przeglad_LOKAL_ROBO\Skorowidz_NMT\Opracowanie_skorowidzy_NMT_local.gdb\NMT_Kronsztad\skorowidzNMT_Kron2016'
     clearDTMdubles(layer)

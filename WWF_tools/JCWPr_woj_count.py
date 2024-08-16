@@ -9,12 +9,62 @@ arcpy.CheckOutExtension("3D")
 """parametry programu"""
 
 workspace = arcpy.env.workspace = \
-    r"E:\Waloryzajca_rzek_WWF\ROBOCZY_KWIECIEN_2023\Zadanie3i4\Warstwy_robocze.gdb"
+    r"E:\Waloryzajca_rzek_WWF\ROBOCZY_CZERWIEC_2024\Zad_00_Przypisanie_do_odc_badawczych_JCWP\Zweryfikowana_warstwa_rzek_odcinkow_badawczych.gdb"
 
+odc = 'odcinki_rzek_2024'
+odc_int = 'odcinki_rzek_2024_Intersect3'
 jcwpr = 'rzeki_glowne_JCWP'
 wojtab = 'woj_Statis_dl'
 nw = 'nw_Statis3'
 zz = 'zz_Statis3'
+
+def jcwpCount(odcinki, odcinki_int):
+    jcwp_dict = {}
+    with arcpy.da.SearchCursor(odcinki_int, ['ID','MS_KOD', 'UDZ']) as cur:
+        for row in cur:
+            if row[0] not in jcwp_dict:
+                jcwp_dict[row[0]] = [(row[1], row[2])]
+            else:
+                i = 0
+                for item in jcwp_dict[row[0]]:
+                    if row[2] < item[1]:
+                        i += 1
+                jcwp_dict[row[0]].insert(i, (row[1], row[2]))
+
+    del cur
+    print("slownik")
+
+    with arcpy.da.UpdateCursor(odcinki, ['ID', 'MS_KOD_1', 'UDZ_1', 'MS_KOD_2', 'UDZ_2', 'MS_KOD_3', 'UDZ_3']) as update:
+        for row in update:
+            if row[1] is None:
+                try:
+                    if len(jcwp_dict[row[0]]) == 1:
+                        row[1] = jcwp_dict[row[0]][0][0]
+                        row[2] = jcwp_dict[row[0]][0][1]
+                        row[3] = "ND"
+                        row[4] = 0
+                        row[5] = "ND"
+                        row[6] = 0
+                    elif len(jcwp_dict[row[0]]) == 2:
+                        row[1] = jcwp_dict[row[0]][0][0]
+                        row[2] = jcwp_dict[row[0]][0][1]
+                        row[3] = jcwp_dict[row[0]][1][0]
+                        row[4] = jcwp_dict[row[0]][1][1]
+                        row[5] = "ND"
+                        row[6] = 0
+                    else:
+                        row[1] = jcwp_dict[row[0]][0][0]
+                        row[2] = jcwp_dict[row[0]][0][1]
+                        row[3] = jcwp_dict[row[0]][1][0]
+                        row[4] = jcwp_dict[row[0]][1][1]
+                        row[5] = jcwp_dict[row[0]][2][0]
+                        row[6] = jcwp_dict[row[0]][2][1]
+                except KeyError as ke:
+                    print(ke)
+                    continue
+
+                update.updateRow(row)
+
 def wojCount(jcwpr, wojtab):
     woj_jcwpr = {}
     with arcpy.da.SearchCursor(wojtab, ['MS_KOD', 'Nazwa_WOJ', 'SUM_geom_Length']) as cur:
@@ -95,4 +145,5 @@ def zznwCount(jcwpr, nwtab, zztab):
     del update
     return
 
-zznwCount(jcwpr, nw, zz)
+# zznwCount(jcwpr, nw, zz)
+jcwpCount(odc, odc_int)
